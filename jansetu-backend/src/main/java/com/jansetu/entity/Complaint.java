@@ -2,6 +2,9 @@
 package com.jansetu.entity;
 
 import java.math.BigDecimal;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.FetchType;
 import java.time.LocalDateTime;
 
 import com.jansetu.enums.ComplaintPriority;
@@ -86,6 +89,10 @@ public class Complaint {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "officer_id")
+    private User assignedOfficer;
 
     // Getters and Setters
 
@@ -179,5 +186,12 @@ public class Complaint {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+    public User getAssignedOfficer() {
+        return assignedOfficer;
+    }
+
+    public void setAssignedOfficer(User assignedOfficer) {
+        this.assignedOfficer = assignedOfficer;
     }
 }
