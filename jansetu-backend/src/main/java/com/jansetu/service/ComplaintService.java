@@ -26,15 +26,16 @@ public class ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final UserRepository userRepository;
-
+    private final ComplaintHistoryService complaintHistoryService;
     public ComplaintService(
             ComplaintRepository complaintRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ComplaintHistoryService complaintHistoryService) {
 
         this.complaintRepository = complaintRepository;
         this.userRepository = userRepository;
+        this.complaintHistoryService = complaintHistoryService;
     }
-
     // 1. Identify authenticated citizen
     private User getCitizen(String email) {
 
@@ -101,6 +102,15 @@ public class ComplaintService {
 
         Complaint savedComplaint =
                 complaintRepository.saveAndFlush(complaint);
+
+        // Record initial complaint history
+        complaintHistoryService.recordStatusChange(
+                savedComplaint,
+                null,
+                ComplaintStatus.SUBMITTED,
+                savedComplaint.getCitizen(),
+                "Complaint submitted by citizen"
+        );
 
         return ComplaintResponse.from(savedComplaint);
     }

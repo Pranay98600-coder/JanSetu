@@ -9,11 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
+import com.jansetu.entity.User;
 import com.jansetu.dto.response.AdminComplaintResponse;
 import com.jansetu.enums.ComplaintPriority;
 import com.jansetu.enums.ComplaintStatus;
 import com.jansetu.repository.ComplaintRepository;
+import com.jansetu.repository.UserRepository;
 import com.jansetu.enums.ComplaintPriority;
 import com.jansetu.entity.Complaint;
 import com.jansetu.enums.ComplaintStatus;
@@ -23,13 +24,19 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AdminComplaintService {
 
-    private final ComplaintRepository complaintRepository;
+	private final ComplaintRepository complaintRepository;
+	private final ComplaintHistoryService complaintHistoryService;
+	private final UserRepository userRepository;
 
-    public AdminComplaintService(
-            ComplaintRepository complaintRepository) {
+	public AdminComplaintService(
+	        ComplaintRepository complaintRepository,
+	        UserRepository userRepository,
+	        ComplaintHistoryService complaintHistoryService) {
 
-        this.complaintRepository = complaintRepository;
-    }
+	    this.complaintRepository = complaintRepository;
+	    this.userRepository = userRepository;
+	    this.complaintHistoryService = complaintHistoryService;
+	}
 
     @Transactional(readOnly = true)
     public Page<AdminComplaintResponse> getAllComplaints(
@@ -81,7 +88,8 @@ public class AdminComplaintService {
     @Transactional
     public AdminComplaintResponse updateComplaintStatus(
             Long complaintId,
-            ComplaintStatus newStatus) {
+            ComplaintStatus newStatus,
+            String adminEmail) {
 
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -89,11 +97,26 @@ public class AdminComplaintService {
                         "Complaint not found"
                 ));
 
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Admin not found"
+                ));
+
+        ComplaintStatus previousStatus = complaint.getStatus();
+
         complaint.setStatus(newStatus);
 
-        Complaint updatedComplaint = complaintRepository.save(complaint);
+        Complaint updated = complaintRepository.save(complaint);
 
-        return AdminComplaintResponse.from(updatedComplaint);
+        complaintHistoryService.recordStatusChange(
+                updated,
+                previousStatus,
+                newStatus,
+                admin,
+                "Status updated by administrator"
+        );
+
+        return AdminComplaintResponse.from(updated);
     }
     
     @Transactional

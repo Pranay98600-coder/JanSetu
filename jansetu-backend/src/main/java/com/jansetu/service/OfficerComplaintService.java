@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jansetu.dto.response.ResolutionEvidenceResponse;
-
+import com.jansetu.service.ComplaintHistoryService;
 @Service
 public class OfficerComplaintService {
 
@@ -30,16 +30,19 @@ public class OfficerComplaintService {
     private final UserRepository userRepository;
     private final ResolutionEvidenceRepository resolutionEvidenceRepository;
     private final EvidenceStorageService evidenceStorageService;
+    private final ComplaintHistoryService complaintHistoryService;
     public OfficerComplaintService(
             ComplaintRepository complaintRepository,
             UserRepository userRepository,
             ResolutionEvidenceRepository resolutionEvidenceRepository,
-            EvidenceStorageService evidenceStorageService) {
+            EvidenceStorageService evidenceStorageService,
+            ComplaintHistoryService complaintHistoryService) {
 
         this.complaintRepository = complaintRepository;
         this.userRepository = userRepository;
         this.resolutionEvidenceRepository = resolutionEvidenceRepository;
         this.evidenceStorageService = evidenceStorageService;
+        this.complaintHistoryService = complaintHistoryService;
     }
 
     private User getOfficer(String email) {
@@ -122,11 +125,21 @@ public class OfficerComplaintService {
             );
         }
 
+        ComplaintStatus previousStatus = complaint.getStatus();
+
         complaint.setStatus(newStatus);
 
-        Complaint updatedComplaint = complaintRepository.save(complaint);
+        Complaint updated = complaintRepository.save(complaint);
 
-        return ComplaintResponse.from(updatedComplaint);
+        complaintHistoryService.recordStatusChange(
+                updated,
+                previousStatus,
+                newStatus,
+                officer,
+                "Complaint progress updated by officer"
+        );
+
+        return ComplaintResponse.from(updated);
     }
     
     @Transactional
@@ -193,13 +206,26 @@ public class OfficerComplaintService {
             List<ResolutionEvidence> savedEvidence =
                     resolutionEvidenceRepository.saveAll(evidenceRecords);
 
+            // Capture previous status
+            ComplaintStatus previousStatus = complaint.getStatus();
+
+            // Update complaint status
             complaint.setStatus(ComplaintStatus.RESOLVED);
-            complaintRepository.save(complaint);
+
+            Complaint updatedComplaint = complaintRepository.save(complaint);
+
+            // Record resolution history
+            complaintHistoryService.recordStatusChange(
+                    updatedComplaint,
+                    previousStatus,
+                    ComplaintStatus.RESOLVED,
+                    officer,
+                    "Complaint resolved. Evidence submitted."
+            );
 
             return savedEvidence.stream()
                     .map(ResolutionEvidenceResponse::from)
                     .toList();
-
         } catch (RuntimeException exception) {
 
             for (String storedFile : storedFiles) {

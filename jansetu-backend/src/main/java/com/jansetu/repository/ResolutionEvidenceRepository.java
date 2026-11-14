@@ -1,14 +1,23 @@
 package com.jansetu.repository;
 
 import com.jansetu.entity.ResolutionEvidence;
+
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-
+import java.util.Optional;
 public interface ResolutionEvidenceRepository
         extends JpaRepository<ResolutionEvidence, Long> {
 
     List<ResolutionEvidence> findByComplaintIdOrderByUploadedAtDesc(
             Long complaintId
     );
+    
+    Optional<ResolutionEvidence> findByIdAndComplaintId(
+            Long id,
+            Long complaintId
+    );
+    
+    
 }

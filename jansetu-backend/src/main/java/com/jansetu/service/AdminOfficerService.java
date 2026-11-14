@@ -24,14 +24,17 @@ public class AdminOfficerService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ComplaintRepository complaintRepository;
+    private final ComplaintHistoryService complaintHistoryService;
     public AdminOfficerService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            ComplaintRepository complaintRepository) {
+            ComplaintRepository complaintRepository,
+            ComplaintHistoryService complaintHistoryService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.complaintRepository = complaintRepository;
+        this.complaintHistoryService = complaintHistoryService;
     }
     @Transactional
     public OfficerResponse createOfficer(CreateOfficerRequest request) {
@@ -68,35 +71,64 @@ public class AdminOfficerService {
                 .toList();
     }
     
-    @Transactional
-    public ComplaintAssignmentResponse assignComplaint(
-            Long complaintId,
-            AssignComplaintRequest request) {
+   
 
-        Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Complaint not found"
-                ));
+@Transactional
+public ComplaintAssignmentResponse assignComplaint(
+        Long complaintId,
+        AssignComplaintRequest request,
+        String adminEmail) {
 
-        User officer = userRepository.findById(request.officerId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Officer not found"
-                ));
+    // 1. Find complaint
+    Complaint complaint = complaintRepository.findById(complaintId)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Complaint not found"
+            ));
 
-        if (officer.getRole() != Role.OFFICER) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Selected user is not an officer"
-            );
-        }
+    // 2. Identify authenticated admin
+    User admin = userRepository.findByEmail(
+            adminEmail.trim().toLowerCase()
+    ).orElseThrow(() -> new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Admin not found"
+    ));
 
-        complaint.setAssignedOfficer(officer);
-        complaint.setStatus(ComplaintStatus.ASSIGNED);
+    // 3. Verify selected officer
+    User officer = userRepository.findById(request.officerId())
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Officer not found"
+            ));
 
-        Complaint savedComplaint = complaintRepository.save(complaint);
-
-        return ComplaintAssignmentResponse.from(savedComplaint);
+    if (officer.getRole() != Role.OFFICER) {
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Selected user is not an officer"
+        );
     }
+
+    // 4. Capture previous status
+    ComplaintStatus previousStatus = complaint.getStatus();
+
+    // 5. Assign officer and update status
+    complaint.setAssignedOfficer(officer);
+    complaint.setStatus(ComplaintStatus.ASSIGNED);
+
+    Complaint savedComplaint =
+            complaintRepository.save(complaint);
+
+    // 6. Record assignment history
+    complaintHistoryService.recordStatusChange(
+            savedComplaint,
+            previousStatus,
+            ComplaintStatus.ASSIGNED,
+            admin,
+            "Complaint assigned to " + officer.getFullName()
+    );
+
+    // 7. Return response
+    return ComplaintAssignmentResponse.from(savedComplaint);
+}
+
 }

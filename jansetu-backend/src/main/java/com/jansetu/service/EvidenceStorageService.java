@@ -10,7 +10,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 import java.util.UUID;
-
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import java.net.MalformedURLException;
 @Service
 public class EvidenceStorageService {
 
@@ -95,6 +97,36 @@ public class EvidenceStorageService {
         } catch (IOException exception) {
             throw new IllegalStateException(
                     "Unable to delete evidence image",
+                    exception
+            );
+        }
+    }
+    
+    public Resource load(String storedFileName) {
+
+        try {
+            Path directory = Paths.get(uploadDirectory)
+                    .toAbsolutePath()
+                    .normalize();
+
+            Path file = directory.resolve(storedFileName)
+                    .normalize();
+
+            if (!file.startsWith(directory)) {
+                throw new IllegalArgumentException("Invalid file path");
+            }
+
+            Resource resource = new UrlResource(file.toUri());
+
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new IllegalStateException("Evidence image not found");
+            }
+
+            return resource;
+
+        } catch (MalformedURLException exception) {
+            throw new IllegalStateException(
+                    "Unable to load evidence image",
                     exception
             );
         }

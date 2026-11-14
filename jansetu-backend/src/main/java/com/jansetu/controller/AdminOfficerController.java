@@ -1,6 +1,7 @@
 package com.jansetu.controller;
 
 import com.jansetu.dto.request.CreateOfficerRequest;
+import com.jansetu.service.ResolutionEvidenceQueryService;
 import com.jansetu.dto.response.OfficerResponse;
 import com.jansetu.service.AdminOfficerService;
 
@@ -16,15 +17,19 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
-
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.HttpHeaders;
 @RestController
 @RequestMapping("/api/admin/officers")
 public class AdminOfficerController {
 
     private final AdminOfficerService adminOfficerService;
-
-    public AdminOfficerController(AdminOfficerService adminOfficerService) {
+    private final ResolutionEvidenceQueryService evidenceQueryService;
+    public AdminOfficerController(AdminOfficerService adminOfficerService,ResolutionEvidenceQueryService evidenceQueryService) {
         this.adminOfficerService = adminOfficerService;
+        this.evidenceQueryService = evidenceQueryService;
     }
 
     @PostMapping
@@ -54,5 +59,23 @@ public class AdminOfficerController {
                 adminOfficerService.assignComplaint(complaintId, request);
 
         return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{complaintId}/evidence/{evidenceId}/image")
+    public ResponseEntity<Resource> viewEvidenceImage(
+            @PathVariable Long complaintId,
+            @PathVariable Long evidenceId) {
+
+        Resource image = evidenceQueryService.getAdminEvidenceImage(
+                complaintId, evidenceId
+        );
+
+        MediaType mediaType = MediaTypeFactory.getMediaType(image)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(image);
     }
 }
