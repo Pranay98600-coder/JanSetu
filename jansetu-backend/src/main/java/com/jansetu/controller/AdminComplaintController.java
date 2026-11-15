@@ -4,6 +4,8 @@ package com.jansetu.controller;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,6 +19,7 @@ import com.jansetu.dto.response.ResolutionEvidenceResponse;
 import com.jansetu.enums.ComplaintPriority;
 import com.jansetu.enums.ComplaintStatus;
 import com.jansetu.service.AdminComplaintService;
+import com.jansetu.service.ComplaintCsvExportService;
 import com.jansetu.service.ComplaintHistoryQueryService;
 import com.jansetu.service.ResolutionEvidenceQueryService;
 
@@ -29,15 +32,18 @@ public class AdminComplaintController {
     private final AdminComplaintService adminComplaintService;
     private final ResolutionEvidenceQueryService evidenceQueryService;
     private final ComplaintHistoryQueryService historyQueryService;
+    private final ComplaintCsvExportService complaintCsvExportService;
 
     public AdminComplaintController(
             AdminComplaintService adminComplaintService,
             ResolutionEvidenceQueryService evidenceQueryService,
-            ComplaintHistoryQueryService historyQueryService) {
+            ComplaintHistoryQueryService historyQueryService,
+            ComplaintCsvExportService complaintCsvExportService) {
 
         this.adminComplaintService = adminComplaintService;
         this.evidenceQueryService = evidenceQueryService;
         this.historyQueryService = historyQueryService;
+        this.complaintCsvExportService = complaintCsvExportService;
     }
 
     // 1. Get all complaints with optional filters and pagination
@@ -114,5 +120,21 @@ public class AdminComplaintController {
                         "ADMIN"
                 )
         );
+    }
+
+    // 6. Export all complaints as CSV
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportComplaints() {
+
+        byte[] csvData = complaintCsvExportService.exportComplaints();
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=jansetu-complaints.csv"
+                )
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentLength(csvData.length)
+                .body(csvData);
     }
 }
