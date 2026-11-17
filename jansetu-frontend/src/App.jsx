@@ -1,60 +1,55 @@
+
 import { useEffect, useState } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
+
 import api from './services/api';
 import './App.css';
 
-function App() {
-
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Login from './pages/login';
+import ProtectedRoute from './components/ProtectedRoute';
+function HomePage() {
   const [backendStatus, setBackendStatus] = useState('CHECKING');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-
     const checkBackend = async () => {
-
       try {
-
         const response = await api.get('/health');
 
         setBackendStatus(response.data.status);
         setMessage(response.data.message);
-
       } catch (error) {
-
         console.error('Backend connection failed:', error);
 
         setBackendStatus('OFFLINE');
-        setMessage(
-          'Unable to connect with JanSetu backend.'
-        );
-
+        setMessage('Unable to connect with JanSetu backend.');
       }
     };
 
     checkBackend();
-
   }, []);
 
   return (
     <div className="app">
-
       <header className="navbar">
-
         <div className="brand">
           <span className="brand-icon">J</span>
           <span>JanSetu</span>
         </div>
 
         <span className="brand-hindi">जनसेतु</span>
-
       </header>
 
       <main className="hero">
-
         <div className="hero-content">
-
-          <span className="tagline">
-            CONNECTING CITIZENS
-          </span>
+          <span className="tagline">CONNECTING CITIZENS</span>
 
           <h1>
             Your City.<br />
@@ -70,58 +65,87 @@ function App() {
           <button className="primary-btn">
             Explore JanSetu
           </button>
-
         </div>
 
         <div className="hero-card">
-
           <div className="card-icon">🏙️</div>
 
           <h2>Better Cities Start With You</h2>
 
           <p>
-            From reporting potholes to tracking
-            public infrastructure problems,
-            make your voice count.
+            From reporting potholes to tracking public
+            infrastructure problems, make your voice count.
           </p>
 
           <div className="connection-status">
-
             <span
               className={`status-dot ${
                 backendStatus === 'UP'
                   ? 'online'
                   : backendStatus === 'CHECKING'
-                  ? 'checking'
-                  : 'offline'
+                    ? 'checking'
+                    : 'offline'
               }`}
             />
 
             <strong>Backend: {backendStatus}</strong>
-
           </div>
 
-          <p className="status-message">
-            {message}
-          </p>
+          <p className="status-message">{message}</p>
 
           <div className="color-strip">
             <span></span>
             <span></span>
             <span></span>
           </div>
-
         </div>
-
       </main>
 
       <footer>
         © 2026 JanSetu. Connecting Citizens.
         Creating Better Communities.
       </footer>
-
     </div>
   );
 }
+
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Admin Protected Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+
+            <Route
+              index
+              element={<Navigate to="dashboard" replace />}
+            />
+
+            <Route
+              path="dashboard"
+              element={<AdminDashboard />}
+            />
+
+          </Route>
+        </Route>
+
+        {/* Fallback */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 
 export default App;
