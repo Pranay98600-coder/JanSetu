@@ -1,35 +1,33 @@
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import { useEffect, useState } from 'react';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate
-} from 'react-router-dom';
-
-import api from './services/api';
-import './App.css';
-
-import AdminLayout from './layouts/AdminLayout';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import Login from './pages/login';
-import ProtectedRoute from './components/ProtectedRoute';
+import api from "./services/api";
+import "./App.css";
+import CitizenLayout from "./layouts/CitizenLayout";
+import CitizenDashboard from "./pages/citizen/CitizenDashboard";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import Login from "./pages/login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import SubmitComplaint from "./pages/citizen/SubmitComplaint";
+import MyComplaints from "./pages/citizen/MyComplaints";
+import ComplaintDetails from "./pages/citizen/ComplaintDetails";
 function HomePage() {
-  const [backendStatus, setBackendStatus] = useState('CHECKING');
-  const [message, setMessage] = useState('');
+  const [backendStatus, setBackendStatus] = useState("CHECKING");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await api.get('/health');
+        const response = await api.get("/health");
 
         setBackendStatus(response.data.status);
         setMessage(response.data.message);
       } catch (error) {
-        console.error('Backend connection failed:', error);
+        console.error("Backend connection failed:", error);
 
-        setBackendStatus('OFFLINE');
-        setMessage('Unable to connect with JanSetu backend.');
+        setBackendStatus("OFFLINE");
+        setMessage("Unable to connect with JanSetu backend.");
       }
     };
 
@@ -52,19 +50,19 @@ function HomePage() {
           <span className="tagline">CONNECTING CITIZENS</span>
 
           <h1>
-            Your City.<br />
-            Your Voice.<br />
+            Your City.
+            <br />
+            Your Voice.
+            <br />
             <span>Our Responsibility.</span>
           </h1>
 
           <p>
-            Report civic issues, track their progress,
-            and help build a better community through JanSetu.
+            Report civic issues, track their progress, and help build a better
+            community through JanSetu.
           </p>
 
-          <button className="primary-btn">
-            Explore JanSetu
-          </button>
+          <button className="primary-btn">Explore JanSetu</button>
         </div>
 
         <div className="hero-card">
@@ -73,18 +71,18 @@ function HomePage() {
           <h2>Better Cities Start With You</h2>
 
           <p>
-            From reporting potholes to tracking public
-            infrastructure problems, make your voice count.
+            From reporting potholes to tracking public infrastructure problems,
+            make your voice count.
           </p>
 
           <div className="connection-status">
             <span
               className={`status-dot ${
-                backendStatus === 'UP'
-                  ? 'online'
-                  : backendStatus === 'CHECKING'
-                    ? 'checking'
-                    : 'offline'
+                backendStatus === "UP"
+                  ? "online"
+                  : backendStatus === "CHECKING"
+                    ? "checking"
+                    : "offline"
               }`}
             />
 
@@ -102,50 +100,44 @@ function HomePage() {
       </main>
 
       <footer>
-        © 2026 JanSetu. Connecting Citizens.
-        Creating Better Communities.
+        © 2026 JanSetu. Connecting Citizens. Creating Better Communities.
       </footer>
     </div>
   );
 }
 
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<Login />} />
 
         {/* Admin Protected Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
           <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
 
-            <Route
-              index
-              element={<Navigate to="dashboard" replace />}
-            />
-
-            <Route
-              path="dashboard"
-              element={<AdminDashboard />}
-            />
-
+            <Route path="dashboard" element={<AdminDashboard />} />
           </Route>
         </Route>
 
         {/* Fallback */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        <Route path="*" element={<Navigate to="/" replace />} />
 
+        <Route element={<ProtectedRoute allowedRoles={["CITIZEN"]} />}>
+          <Route path="/citizen" element={<CitizenLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<CitizenDashboard />} />
+            <Route path="submit-complaint" element={<SubmitComplaint />} />
+            <Route path="complaints" element={<MyComplaints />} />
+            <Route path="complaints/:id" element={<ComplaintDetails />} />
+          </Route>
+        </Route>
       </Routes>
     </BrowserRouter>
   );
 }
-
 
 export default App;
