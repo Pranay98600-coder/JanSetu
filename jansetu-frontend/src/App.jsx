@@ -12,6 +12,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SubmitComplaint from "./pages/citizen/SubmitComplaint";
 import MyComplaints from "./pages/citizen/MyComplaints";
 import ComplaintDetails from "./pages/citizen/ComplaintDetails";
+import OfficerLayout from "./layouts/OfficerLayout";
+import OfficerDashboard from "./pages/officer/OfficerDashboard";
+import AssignedComplaints from "./pages/officer/AssignedComplaints";
+import OfficerComplaintDetails from "./pages/officer/OfficerComplaintDetails";
+import OfficerProfile from "./pages/officer/OfficerProfile";
+
 function HomePage() {
   const [backendStatus, setBackendStatus] = useState("CHECKING");
   const [message, setMessage] = useState("");
@@ -123,9 +129,6 @@ function App() {
           </Route>
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-
         <Route element={<ProtectedRoute allowedRoles={["CITIZEN"]} />}>
           <Route path="/citizen" element={<CitizenLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -135,6 +138,28 @@ function App() {
             <Route path="complaints/:id" element={<ComplaintDetails />} />
           </Route>
         </Route>
+
+        {/* Officer Protected Routes */}
+        {/* Officer Protected Routes */}
+        <Route element={<ProtectedRoute allowedRoles={["OFFICER"]} />}>
+          <Route path="/officer" element={<OfficerLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+
+            <Route path="dashboard" element={<OfficerDashboard />} />
+
+            <Route path="complaints" element={<AssignedComplaints />} />
+
+            <Route
+              path="complaints/:id"
+              element={<OfficerComplaintDetails />}
+            />
+
+            <Route path="profile" element={<OfficerProfile />} />
+          </Route>
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

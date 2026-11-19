@@ -28,7 +28,7 @@ function Login() {
   } else if (authData?.user?.role === "CITIZEN") {
     navigate("/citizen/dashboard", { replace: true });
   } else if (authData?.user?.role === "OFFICER") {
-    navigate("/", { replace: true });
+    navigate("/officer/dashboard", { replace: true });
   } else {
     setError("Login successful, but user role is missing or invalid.");
   }
