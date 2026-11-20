@@ -17,6 +17,11 @@ import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import AssignedComplaints from "./pages/officer/AssignedComplaints";
 import OfficerComplaintDetails from "./pages/officer/OfficerComplaintDetails";
 import OfficerProfile from "./pages/officer/OfficerProfile";
+import AdminComplaints from "./pages/admin/AdminComplaints";
+import AdminOfficers from "./pages/admin/AdminOfficers";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 function HomePage() {
   const [backendStatus, setBackendStatus] = useState("CHECKING");
@@ -126,6 +131,17 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
 
             <Route path="dashboard" element={<AdminDashboard />} />
+
+            {/* Temporary placeholder routes */}
+            <Route path="complaints" element={<AdminComplaints />} />
+
+            <Route path="officers" element={<AdminOfficers />} />
+
+            <Route path="analytics" element={<AdminAnalytics />} />
+
+            <Route path="reports" element={<AdminReports />} />
+
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>
 
